@@ -35,9 +35,9 @@ def classificar_ehf(row):
 def classificar_umidade(row):
     if pd.isna(row["Umid_max_p85"]) or pd.isna(row["Umid_max_p95"]):
         return None
-    if row["Umax"] >= row["Umid_max_p85"] and row["Umax"] < row["Umid_max_p95"]:
+    if row["Umidade_Max"] >= row["Umid_max_p85"] and row["Umidade_Max"] < row["Umid_max_p95"]:
         return "Umidade Alta Severa"
-    elif row["Umax"] >= row["Umid_max_p95"]:
+    elif row["Umidade_Max"] >= row["Umid_max_p95"]:
         return "Umidade Alta Extrema"
     return "Normal"
 

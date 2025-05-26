@@ -102,6 +102,7 @@ app.layout = dbc.Container([
 def atualizar_mapa(variavel, data):
     dados_dia = df[df["Data"].astype(str) == data]
     gdf = gdf_mapa.merge(dados_dia, left_on="NM_MUN", right_on="Municipio", how="left")
+    gdf = gdf.to_crs(epsg=4326)
 
     if variavel == "Situacao_Calor":
         cor_map = {"Normal": "green", "Calor Severo": "yellow", "Calor Extremo": "red"}
@@ -118,7 +119,7 @@ def atualizar_mapa(variavel, data):
 
     fig = px.choropleth_mapbox(
         gdf,
-        geojson=gdf.geometry,
+        geojson=gdf.set_geometry("geometry").__geo_interface__,
         locations=gdf.index,
         color=variavel,
         hover_name="NM_MUN",
@@ -138,5 +139,6 @@ server = app.server
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8050)
+
 
 

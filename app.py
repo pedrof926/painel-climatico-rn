@@ -103,36 +103,44 @@ def atualizar_mapa(variavel, data):
     dados_dia = df[df["Data"].astype(str) == data]
     gdf = gdf_mapa.merge(dados_dia, left_on="NM_MUN", right_on="Municipio", how="left")
     gdf = gdf.to_crs(epsg=4326)
-    geojson_data = gdf.to_json()
 
-    if variavel == "Situacao_Calor":
-        cor_map = {"Normal": "green", "Calor Severo": "yellow", "Calor Extremo": "red"}
-        ordem = ["Normal", "Calor Severo", "Calor Extremo"]
-    elif variavel == "Classificacao_Umidade":
-        cor_map = {"Normal": "green", "Umidade Alta Severa": "yellow", "Umidade Alta Extrema": "red"}
-        ordem = ["Normal", "Umidade Alta Severa", "Umidade Alta Extrema"]
-    elif variavel == "Classificacao_Precipitacao":
-        cor_map = {"Normal": "green", "Chuva Alta Severa": "yellow", "Chuva Extrema": "red"}
-        ordem = ["Normal", "Chuva Alta Severa", "Chuva Extrema"]
+    if variavel in ["Situacao_Calor", "Classificacao_Umidade", "Classificacao_Precipitacao"]:
+        if variavel == "Situacao_Calor":
+            cor_map = {"Normal": "green", "Calor Severo": "yellow", "Calor Extremo": "red"}
+            ordem = ["Normal", "Calor Severo", "Calor Extremo"]
+        elif variavel == "Classificacao_Umidade":
+            cor_map = {"Normal": "green", "Umidade Alta Severa": "yellow", "Umidade Alta Extrema": "red"}
+            ordem = ["Normal", "Umidade Alta Severa", "Umidade Alta Extrema"]
+        else:
+            cor_map = {"Normal": "green", "Chuva Alta Severa": "yellow", "Chuva Extrema": "red"}
+            ordem = ["Normal", "Chuva Alta Severa", "Chuva Extrema"]
+
+        fig = px.choropleth_mapbox(
+            gdf,
+            geojson=gdf.geometry,
+            locations=gdf.index,
+            color=variavel,
+            hover_name="NM_MUN",
+            mapbox_style="carto-positron",
+            center={"lat": -3.8, "lon": -60},
+            zoom=4.5,
+            opacity=0.75,
+            category_orders={variavel: ordem},
+            color_discrete_map=cor_map
+        )
     else:
-        cor_map = None
-        ordem = None
-
-    fig = px.choropleth_mapbox(
-        gdf,
-        geojson=geojson_data,
-        locations="NM_MUN",
-        featureidkey="properties.NM_MUN",
-        color=variavel,
-        hover_name="NM_MUN",
-        mapbox_style="carto-positron",
-        center={"lat": -3.8, "lon": -60},
-        zoom=4.5,
-        opacity=0.75,
-        color_discrete_map=cor_map if cor_map else None,
-        category_orders={variavel: ordem} if ordem else None,
-        color_continuous_scale="RdBu_r" if "Min" in variavel else "Reds" if "Max" in variavel else "Viridis"
-    )
+        fig = px.choropleth_mapbox(
+            gdf,
+            geojson=gdf.geometry,
+            locations=gdf.index,
+            color=variavel,
+            hover_name="NM_MUN",
+            mapbox_style="carto-positron",
+            center={"lat": -3.8, "lon": -60},
+            zoom=4.5,
+            opacity=0.75,
+            color_continuous_scale="RdBu_r" if "Min" in variavel else "Reds" if "Max" in variavel else "Viridis"
+        )
 
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
     return fig

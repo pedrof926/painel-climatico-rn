@@ -4,13 +4,13 @@ import plotly.express as px
 from dash import Dash, dcc, html, Input, Output
 import dash_bootstrap_components as dbc
 
-# ========== LER DADOS BASE ==========
+# ========== LER DADOS ==========
 df = pd.read_excel("dados/previsao_diaria_com_ehf.xlsx")
 df_lim = pd.read_excel("dados/limiares_climaticos_norte.xlsx")
 df_geo = pd.read_excel("dados/geoses_norte.xlsx")
 gdf_mapa = gpd.read_file("dados/Municipios_Regiao_Norte_2024.shp")
 
-# ========== AJUSTES ==========
+# ========== PADRONIZAR ==========
 df["Data"] = pd.to_datetime(df["Data"]).dt.date
 df["Municipio"] = df["Municipio"].str.strip().str.upper()
 df_lim["Municipio"] = df_lim["Municipio"].str.strip().str.upper()
@@ -35,18 +35,18 @@ def classificar_ehf(row):
 def classificar_umidade(row):
     if pd.isna(row["Umid_max_p85"]) or pd.isna(row["Umid_max_p95"]):
         return None
-    if row["Umidade_Max"] >= row["Umid_max_p85"] and row["Umidade_Max"] < row["Umid_max_p95"]:
+    if row["Umid_Max"] >= row["Umid_max_p85"] and row["Umid_Max"] < row["Umid_max_p95"]:
         return "Umidade Alta Severa"
-    elif row["Umidade_Max"] >= row["Umid_max_p95"]:
+    elif row["Umid_Max"] >= row["Umid_max_p95"]:
         return "Umidade Alta Extrema"
     return "Normal"
 
 def classificar_precipitacao(row):
     if pd.isna(row["Prec_p80"]) or pd.isna(row["Prec_p95"]):
         return None
-    if row["Precipitacao"] >= row["Prec_p80"] and row["Precipitacao"] < row["Prec_p95"]:
+    if row["Prec_Acumulada"] >= row["Prec_p80"] and row["Prec_Acumulada"] < row["Prec_p95"]:
         return "Chuva Alta Severa"
-    elif row["Precipitacao"] >= row["Prec_p95"]:
+    elif row["Prec_Acumulada"] >= row["Prec_p95"]:
         return "Chuva Extrema"
     return "Normal"
 
@@ -65,17 +65,18 @@ app.layout = dbc.Container([
             dcc.Dropdown(
                 id="variavel",
                 options=[
-                    {"label": "Temperatura Máxima (Tmax)", "value": "Tmax"},
-                    {"label": "Temperatura Mínima (Tmin)", "value": "Tmin"},
-                    {"label": "Temperatura Média (Tmed)", "value": "Tmed"},
-                    {"label": "Umidade Máxima (Umax)", "value": "Umax"},
-                    {"label": "Umidade Mínima (Umin)", "value": "Umin"},
-                    {"label": "Precipitação (mm)", "value": "Precipitacao"},
+                    {"label": "Temperatura Máxima (Temp_Max)", "value": "Temp_Max"},
+                    {"label": "Temperatura Mínima (Temp_Min)", "value": "Temp_Min"},
+                    {"label": "Temperatura Média (Temp_Media)", "value": "Temp_Media"},
+                    {"label": "Umidade Máxima (Umid_Max)", "value": "Umid_Max"},
+                    {"label": "Umidade Mínima (Umid_Min)", "value": "Umid_Min"},
+                    {"label": "Umidade Média (Umid_Media)", "value": "Umid_Media"},
+                    {"label": "Precipitação Acumulada", "value": "Prec_Acumulada"},
                     {"label": "Situação de Calor Excessivo", "value": "Situacao_Calor"},
                     {"label": "Classificação da Umidade", "value": "Classificacao_Umidade"},
                     {"label": "Classificação da Precipitação", "value": "Classificacao_Precipitacao"},
                 ],
-                value="Tmax",
+                value="Temp_Max",
                 clearable=False
             )
         ], md=6),
@@ -127,7 +128,7 @@ def atualizar_mapa(variavel, data):
         opacity=0.75,
         color_discrete_map=cor_map if cor_map else None,
         category_orders={variavel: ordem} if ordem else None,
-        color_continuous_scale="RdBu_r" if "Umin" in variavel else "Reds" if "Tmax" in variavel else "Blues" if "Tmin" in variavel else "Viridis"
+        color_continuous_scale="RdBu_r" if "Min" in variavel else "Reds" if "Max" in variavel else "Viridis"
     )
 
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
@@ -137,4 +138,5 @@ server = app.server
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8050)
+
 

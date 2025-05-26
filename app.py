@@ -103,6 +103,7 @@ def atualizar_mapa(variavel, data):
     dados_dia = df[df["Data"].astype(str) == data]
     gdf = gdf_mapa.merge(dados_dia, left_on="NM_MUN", right_on="Municipio", how="left")
     gdf = gdf.to_crs(epsg=4326)
+    geojson = gdf.set_index("NM_MUN").to_json()
 
     if variavel in ["Situacao_Calor", "Classificacao_Umidade", "Classificacao_Precipitacao"]:
         if variavel == "Situacao_Calor":
@@ -117,8 +118,8 @@ def atualizar_mapa(variavel, data):
 
         fig = px.choropleth_mapbox(
             gdf,
-            geojson=gdf.geometry,
-            locations=gdf.index,
+            geojson=geojson,
+            locations="NM_MUN",
             color=variavel,
             hover_name="NM_MUN",
             mapbox_style="carto-positron",
@@ -131,8 +132,8 @@ def atualizar_mapa(variavel, data):
     else:
         fig = px.choropleth_mapbox(
             gdf,
-            geojson=gdf.geometry,
-            locations=gdf.index,
+            geojson=geojson,
+            locations="NM_MUN",
             color=variavel,
             hover_name="NM_MUN",
             mapbox_style="carto-positron",
@@ -149,6 +150,7 @@ server = app.server
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8050)
+
 
 
 

@@ -103,6 +103,7 @@ def atualizar_mapa(variavel, data):
     dados_dia = df[df["Data"].astype(str) == data]
     gdf = gdf_mapa.merge(dados_dia, left_on="NM_MUN", right_on="Municipio", how="left")
     gdf = gdf.to_crs(epsg=4326)
+    geojson_data = gdf.__geo_interface__
 
     if variavel == "Situacao_Calor":
         cor_map = {"Normal": "green", "Calor Severo": "yellow", "Calor Extremo": "red"}
@@ -118,19 +119,20 @@ def atualizar_mapa(variavel, data):
         ordem = None
 
     fig = px.choropleth_mapbox(
-    gdf,
-    geojson=gdf.__geo_interface__,
-    locations=gdf.index,
-    color=variavel,
-    hover_name="NM_MUN",
-    mapbox_style="carto-positron",
-    center={"lat": -3.8, "lon": -60},
-    zoom=4.5,
-    opacity=0.75,
-    color_discrete_map=cor_map if cor_map else None,
-    category_orders={variavel: ordem} if ordem else None,
-    color_continuous_scale="RdBu_r" if "Min" in variavel else "Reds" if "Max" in variavel else "Viridis"
-)
+        gdf,
+        geojson=geojson_data,
+        locations="NM_MUN",
+        featureidkey="properties.NM_MUN",
+        color=variavel,
+        hover_name="NM_MUN",
+        mapbox_style="carto-positron",
+        center={"lat": -3.8, "lon": -60},
+        zoom=4.5,
+        opacity=0.75,
+        color_discrete_map=cor_map if cor_map else None,
+        category_orders={variavel: ordem} if ordem else None,
+        color_continuous_scale="RdBu_r" if "Min" in variavel else "Reds" if "Max" in variavel else "Viridis"
+    )
 
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
     return fig
@@ -139,6 +141,7 @@ server = app.server
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8050)
+
 
 
 

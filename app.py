@@ -36,7 +36,7 @@ def classificar_umidade(row):
         return 'Sem dado'
     elif row['Umid_Max'] > row['Umid_max_p95']:
         return 'Alta extrema'
-    elif row['Umid_Max'] > row['Umid_max_p80']:
+    elif row['Umid_Max'] > row['Umid_max_p85']:
         return 'Alta severa'
     else:
         return 'Normal'

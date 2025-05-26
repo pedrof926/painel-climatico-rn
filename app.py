@@ -23,30 +23,30 @@ df = df.merge(df_geo, left_on="Municipio", right_on="municipio", how="left")
 
 # ========== CLASSIFICAÇÕES ==========
 def classificar_ehf(row):
-    if pd.isna(row["EHF"]) or pd.isna(row["ehf_p85"]) or pd.isna(row["ehf_p95"]):
+    if pd.isna(row["EHF"]) or pd.isna(row["EHF_p85"]) or pd.isna(row["EHF_p95"]):
         return None
-    if row["EHF"] < row["ehf_p85"]:
+    if row["EHF"] < row["EHF_p85"]:
         return "Normal"
-    elif row["EHF"] < row["ehf_p95"]:
+    elif row["EHF"] < row["EHF_p95"]:
         return "Calor Severo"
     else:
         return "Calor Extremo"
 
 def classificar_umidade(row):
-    if pd.isna(row["urmax_p80"]) or pd.isna(row["urmax_p95"]):
+    if pd.isna(row["Umid_max_p85"]) or pd.isna(row["Umid_max_p95"]):
         return None
-    if row["Umax"] >= row["urmax_p80"] and row["Umax"] < row["urmax_p95"]:
+    if row["Umax"] >= row["Umid_max_p85"] and row["Umax"] < row["Umid_max_p95"]:
         return "Umidade Alta Severa"
-    elif row["Umax"] >= row["urmax_p95"]:
+    elif row["Umax"] >= row["Umid_max_p95"]:
         return "Umidade Alta Extrema"
     return "Normal"
 
 def classificar_precipitacao(row):
-    if pd.isna(row["precip_p80"]) or pd.isna(row["precip_p95"]):
+    if pd.isna(row["Prec_p80"]) or pd.isna(row["Prec_p95"]):
         return None
-    if row["Precipitacao"] >= row["precip_p80"] and row["Precipitacao"] < row["precip_p95"]:
+    if row["Precipitacao"] >= row["Prec_p80"] and row["Precipitacao"] < row["Prec_p95"]:
         return "Chuva Alta Severa"
-    elif row["Precipitacao"] >= row["precip_p95"]:
+    elif row["Precipitacao"] >= row["Prec_p95"]:
         return "Chuva Extrema"
     return "Normal"
 

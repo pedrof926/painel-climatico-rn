@@ -8,7 +8,7 @@ import json
 # === CAMINHOS ===
 caminho_previsao = "dados/previsao_diaria_com_ehf.xlsx"
 caminho_limiares = "dados/limiares_climaticos_norte.xlsx"
-caminho_geoses = "dados/geoses_norte.xlsx"
+caminho_geojson = "dados/municipios_norte_simplificado.geojson"
 caminho_geojson = "dados/municipios_norte.geojson"
 
 # === LEITURA DOS DADOS ===

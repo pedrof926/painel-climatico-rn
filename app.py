@@ -8,15 +8,15 @@ import json
 # === CAMINHOS ===
 caminho_previsao = "dados/previsao_diaria_com_ehf.xlsx"
 caminho_limiares = "dados/limiares_climaticos_norte.xlsx"
-caminho_geojson = "dados/municipios_norte_simplificado.geojson"
 caminho_geoses = "dados/geoses_norte.xlsx"
+caminho_geojson = "dados/municipios_norte_simplificado.geojson"
 
 # === LEITURA DOS DADOS ===
 df_prev = pd.read_excel(caminho_previsao)
 df_lim = pd.read_excel(caminho_limiares)
 df_geo = pd.read_excel(caminho_geoses)
 
-# Padroniza coluna de município
+# Padroniza nomes dos municípios
 df_prev = df_prev.rename(columns={"Municipio": "NM_MUN"})
 df_lim = df_lim.rename(columns={"Municipio": "NM_MUN"})
 df_geo = df_geo.rename(columns={"municipio": "NM_MUN"})
@@ -28,7 +28,7 @@ for d in [df_prev, df_lim, df_geo]:
 df = df_prev.merge(df_lim.drop(columns=["UF"]), on="NM_MUN", how="left")
 df = df.merge(df_geo, on="NM_MUN", how="left")
 
-# Classificacoes
+# Classificações
 def classificar_ehf(row):
     if pd.isna(row["EHF"]) or pd.isna(row["EHF_p85"]) or pd.isna(row["EHF_p95"]):
         return None
@@ -61,17 +61,19 @@ df["Situacao_Calor"] = df.apply(classificar_ehf, axis=1)
 df["Classificacao_Umidade"] = df.apply(classificar_umidade, axis=1)
 df["Classificacao_Precipitacao"] = df.apply(classificar_precip, axis=1)
 
-# === GEOJSON ===
-with open(caminho_geojson, encoding="utf-8") as f:
+# === SHAPEFILE (GEOJSON) ===
+with open(caminho_geojson, "r", encoding="utf-8") as f:
     geojson = json.load(f)
+
+gdf = gpd.read_file(caminho_geojson)
+gdf["NM_MUN"] = gdf["NM_MUN"].str.upper().str.strip()
 
 # === DASH APP ===
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-server = app.server
+server = app.server  # Para o Render reconhecer
 
 app.layout = dbc.Container([
     html.H2("Painel de Previsão Climática - Região Norte", className="text-center my-4"),
-
     dbc.Row([
         dbc.Col([
             dcc.Dropdown(
@@ -91,17 +93,15 @@ app.layout = dbc.Container([
                 clearable=False
             )
         ], md=6),
-
         dbc.Col([
             dcc.Dropdown(
                 id="data",
-                options=[{"label": str(d)[:10], "value": str(d)} for d in sorted(df["Data"].unique())],
-                value=str(sorted(df["Data"].unique())[0]),
+                options=[{"label": str(d), "value": str(d)} for d in sorted(df["Data"].astype(str).unique())],
+                value=str(sorted(df["Data"].astype(str).unique())[0]),
                 clearable=False
             )
         ], md=6),
     ]),
-
     dcc.Graph(id="mapa_previsao", style={"height": "80vh"})
 ], fluid=True)
 
@@ -112,11 +112,10 @@ app.layout = dbc.Container([
 )
 def atualizar_mapa(variavel, data):
     dados_dia = df[df["Data"].astype(str) == data]
-    if dados_dia.empty:
-        return px.scatter_mapbox()  # Evita erro
+    gdf_merged = gdf.merge(dados_dia, on="NM_MUN", how="left")
 
     fig = px.choropleth_mapbox(
-        dados_dia,
+        gdf_merged,
         geojson=geojson,
         locations="NM_MUN",
         featureidkey="properties.NM_MUN",
@@ -126,16 +125,15 @@ def atualizar_mapa(variavel, data):
         center={"lat": -3.8, "lon": -52.4},
         zoom=4.5,
         opacity=0.75,
-        color_discrete_map={
-            "Normal": "green",
-            "Calor Severo": "yellow", "Calor Extremo": "red",
-            "Umidade Alta Severa": "yellow", "Umidade Alta Extrema": "red",
-            "Chuva Alta Severa": "yellow", "Chuva Extrema": "red"
-        } if "Classificacao" in variavel or "Situacao" in variavel else None,
         category_orders={
             "Situacao_Calor": ["Normal", "Calor Severo", "Calor Extremo"],
             "Classificacao_Umidade": ["Normal", "Umidade Alta Severa", "Umidade Alta Extrema"],
             "Classificacao_Precipitacao": ["Normal", "Chuva Alta Severa", "Chuva Extrema"]
+        },
+        color_discrete_map={
+            "Normal": "green", "Calor Severo": "yellow", "Calor Extremo": "red",
+            "Umidade Alta Severa": "yellow", "Umidade Alta Extrema": "red",
+            "Chuva Alta Severa": "yellow", "Chuva Extrema": "red"
         } if "Classificacao" in variavel or "Situacao" in variavel else None,
         color_continuous_scale="RdBu_r" if "Min" in variavel else "Reds"
     )

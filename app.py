@@ -12,17 +12,21 @@ caminho_geoses = "dados/geoses_norte.xlsx"
 caminho_geojson = "dados/municipios_norte.geojson"
 
 # === LEITURA DOS DADOS ===
-df = pd.read_excel(caminho_previsao)
+df_prev = pd.read_excel(caminho_previsao)
 df_lim = pd.read_excel(caminho_limiares)
 df_geo = pd.read_excel(caminho_geoses)
 
-# Padroniza nomes de município
-for d in [df, df_lim, df_geo]:
-    d["NM_MUN"] = d["Municipio"].str.upper().str.strip()
+# Padroniza coluna de município
+df_prev = df_prev.rename(columns={"Municipio": "NM_MUN"})
+df_lim = df_lim.rename(columns={"Municipio": "NM_MUN"})
+df_geo = df_geo.rename(columns={"municipio": "NM_MUN"})
+
+for d in [df_prev, df_lim, df_geo]:
+    d["NM_MUN"] = d["NM_MUN"].str.upper().str.strip()
 
 # Junta os dados
-df = df.merge(df_lim.drop(columns=["Municipio", "UF"]), on="NM_MUN", how="left")
-df = df.merge(df_geo.drop(columns=["Municipio", "UF"]), on="NM_MUN", how="left")
+df = df_prev.merge(df_lim.drop(columns=["UF"]), on="NM_MUN", how="left")
+df = df.merge(df_geo, on="NM_MUN", how="left")
 
 # Classificações
 def classificar_ehf(row):
@@ -173,6 +177,7 @@ def atualizar_mapa(variavel, data):
 
 if __name__ == "__main__":
     app.run_server(debug=True, host="0.0.0.0", port=8050)
+
 
 
 

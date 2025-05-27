@@ -9,7 +9,7 @@ import json
 caminho_previsao = "dados/previsao_diaria_com_ehf.xlsx"
 caminho_limiares = "dados/limiares_climaticos_norte.xlsx"
 caminho_geojson = "dados/municipios_norte_simplificado.geojson"
-caminho_geojson = "dados/municipios_norte.geojson"
+caminho_geoses = "dados/geoses_norte.xlsx"
 
 # === LEITURA DOS DADOS ===
 df_prev = pd.read_excel(caminho_previsao)
@@ -177,6 +177,7 @@ def atualizar_mapa(variavel, data):
 
 if __name__ == "__main__":
     app.run_server(debug=True, host="0.0.0.0", port=8050)
+
 
 
 

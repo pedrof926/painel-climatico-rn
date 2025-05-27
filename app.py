@@ -5,13 +5,13 @@ from dash import Dash, dcc, html, Input, Output
 import dash_bootstrap_components as dbc
 import json
 
-# ========== CAMINHOS ==========
+# === CAMINHOS ===
 caminho_previsao = "dados/previsao_diaria_com_ehf.xlsx"
 caminho_limiares = "dados/limiares_climaticos_norte.xlsx"
 caminho_geoses = "dados/geoses_norte.xlsx"
 caminho_geojson = "dados/municipios_norte.geojson"
 
-# ========== LEITURA DOS DADOS ==========
+# === LEITURA DOS DADOS ===
 df = pd.read_excel(caminho_previsao)
 df_lim = pd.read_excel(caminho_limiares)
 df_geo = pd.read_excel(caminho_geoses)
@@ -57,14 +57,14 @@ df["Situacao_Calor"] = df.apply(classificar_ehf, axis=1)
 df["Classificacao_Umidade"] = df.apply(classificar_umidade, axis=1)
 df["Classificacao_Precipitacao"] = df.apply(classificar_precip, axis=1)
 
-# ========== SHAPEFILE (GEOJSON) ==========
+# === SHAPEFILE (GEOJSON) ===
 with open(caminho_geojson, "r", encoding="utf-8") as f:
     geojson = json.load(f)
 
 gdf = gpd.read_file(caminho_geojson)
 gdf["NM_MUN"] = gdf["NM_MUN"].str.upper().str.strip()
 
-# ========== DASH ==========
+# === DASH APP ===
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 app.layout = dbc.Container([
@@ -75,12 +75,12 @@ app.layout = dbc.Container([
             dcc.Dropdown(
                 id="variavel",
                 options=[
-                    {"label": "Temperatura Máxima (Temp_Max)", "value": "Temp_Max"},
-                    {"label": "Temperatura Mínima (Temp_Min)", "value": "Temp_Min"},
-                    {"label": "Temperatura Média (Temp_Media)", "value": "Temp_Media"},
-                    {"label": "Umidade Máxima (Umid_Max)", "value": "Umid_Max"},
-                    {"label": "Umidade Mínima (Umid_Min)", "value": "Umid_Min"},
-                    {"label": "Precipitação (mm)", "value": "Prec_Acumulada"},
+                    {"label": "Temperatura Máxima", "value": "Temp_Max"},
+                    {"label": "Temperatura Mínima", "value": "Temp_Min"},
+                    {"label": "Temperatura Média", "value": "Temp_Media"},
+                    {"label": "Umidade Máxima", "value": "Umid_Max"},
+                    {"label": "Umidade Mínima", "value": "Umid_Min"},
+                    {"label": "Precipitação", "value": "Prec_Acumulada"},
                     {"label": "Situação de Calor Excessivo", "value": "Situacao_Calor"},
                     {"label": "Classificação da Umidade", "value": "Classificacao_Umidade"},
                     {"label": "Classificação da Precipitação", "value": "Classificacao_Precipitacao"},
@@ -173,6 +173,7 @@ def atualizar_mapa(variavel, data):
 
 if __name__ == "__main__":
     app.run_server(debug=True, host="0.0.0.0", port=8050)
+
 
 
 

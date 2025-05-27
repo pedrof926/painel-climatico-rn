@@ -8,15 +8,15 @@ import json
 # === CAMINHOS ===
 caminho_previsao = "dados/previsao_diaria_com_ehf.xlsx"
 caminho_limiares = "dados/limiares_climaticos_norte.xlsx"
-caminho_geoses = "dados/geoses_norte.xlsx"
 caminho_geojson = "dados/municipios_norte_simplificado.geojson"
+caminho_geoses = "dados/geoses_norte.xlsx"
 
 # === LEITURA DOS DADOS ===
 df_prev = pd.read_excel(caminho_previsao)
 df_lim = pd.read_excel(caminho_limiares)
 df_geo = pd.read_excel(caminho_geoses)
 
-# Padronizar coluna de municipio como NM_MUN
+# Padroniza coluna de município
 df_prev = df_prev.rename(columns={"Municipio": "NM_MUN"})
 df_lim = df_lim.rename(columns={"Municipio": "NM_MUN"})
 df_geo = df_geo.rename(columns={"municipio": "NM_MUN"})
@@ -117,46 +117,55 @@ def atualizar_mapa(variavel, data):
     dados_dia = df[df["Data"].astype(str) == data]
     gdf_merged = gdf.merge(dados_dia, on="NM_MUN", how="left")
 
-    if variavel in ["Situacao_Calor", "Classificacao_Umidade", "Classificacao_Precipitacao"]:
-        categoria_cores = {
-            "Situacao_Calor": {
-                "Normal": "green", "Calor Severo": "yellow", "Calor Extremo": "red"
-            },
-            "Classificacao_Umidade": {
-                "Normal": "green", "Umidade Alta Severa": "yellow", "Umidade Alta Extrema": "red"
-            },
-            "Classificacao_Precipitacao": {
-                "Normal": "green", "Chuva Alta Severa": "yellow", "Chuva Extrema": "red"
-            }
-        }
+    args = dict(
+        geojson=geojson,
+        locations="NM_MUN",
+        featureidkey="properties.NM_MUN",
+        hover_name="NM_MUN",
+        mapbox_style="carto-positron",
+        center={"lat": -3.8, "lon": -52.4},
+        zoom=4.5,
+        opacity=0.75
+    )
+
+    if variavel == "Situacao_Calor":
         fig = px.choropleth_mapbox(
             gdf_merged,
-            geojson=geojson,
-            locations=gdf_merged.index,
-            color=variavel,
-            hover_name="NM_MUN",
-            mapbox_style="carto-positron",
-            center={"lat": -3.8, "lon": -52.4},
-            zoom=4.5,
-            opacity=0.75,
-            color_discrete_map=categoria_cores[variavel]
+            color="Situacao_Calor",
+            category_orders={"Situacao_Calor": ["Normal", "Calor Severo", "Calor Extremo"]},
+            color_discrete_map={"Normal": "green", "Calor Severo": "yellow", "Calor Extremo": "red"},
+            **args
+        )
+    elif variavel == "Classificacao_Umidade":
+        fig = px.choropleth_mapbox(
+            gdf_merged,
+            color="Classificacao_Umidade",
+            category_orders={"Classificacao_Umidade": ["Normal", "Umidade Alta Severa", "Umidade Alta Extrema"]},
+            color_discrete_map={"Normal": "green", "Umidade Alta Severa": "yellow", "Umidade Alta Extrema": "red"},
+            **args
+        )
+    elif variavel == "Classificacao_Precipitacao":
+        fig = px.choropleth_mapbox(
+            gdf_merged,
+            color="Classificacao_Precipitacao",
+            category_orders={"Classificacao_Precipitacao": ["Normal", "Chuva Alta Severa", "Chuva Extrema"]},
+            color_discrete_map={"Normal": "green", "Chuva Alta Severa": "yellow", "Chuva Extrema": "red"},
+            **args
         )
     else:
         fig = px.choropleth_mapbox(
             gdf_merged,
-            geojson=geojson,
-            locations=gdf_merged.index,
             color=variavel,
-            hover_name="NM_MUN",
-            mapbox_style="carto-positron",
-            center={"lat": -3.8, "lon": -52.4},
-            zoom=4.5,
-            opacity=0.75,
-            color_continuous_scale="RdBu_r" if "Min" in variavel else "Reds"
+            color_continuous_scale="RdBu_r" if "Min" in variavel else "Reds",
+            **args
         )
 
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
     return fig
+
+if __name__ == "__main__":
+    app.run_server(debug=True, host="0.0.0.0", port=8050)
+
 
 
 

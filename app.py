@@ -1,3 +1,5 @@
+from pprint import pprint
+
 import pandas as pd
 import geopandas as gpd
 import plotly.express as px
@@ -64,7 +66,6 @@ df["Classificacao_Precipitacao"] = df.apply(classificar_precip, axis=1)
 # === SHAPEFILE (GEOJSON) ===
 with open(caminho_geojson, "r", encoding="utf-8") as f:
     geojson = json.load(f)
-    print(geojson)
 
 gdf = gpd.read_file(caminho_geojson)
 gdf["NM_MUN"] = gdf["NM_MUN"].str.upper().str.strip()
@@ -113,13 +114,15 @@ app.layout = dbc.Container([
 )
 def atualizar_mapa(variavel, data):
     dados_dia = df[df["Data"].astype(str) == data]
+    dados_dia = dados_dia.drop_duplicates(subset="NM_MUN")
     gdf_merged = gdf.merge(dados_dia, on="NM_MUN", how="left")
+
+    gdf_merged.set_index("CD_MUN", inplace=True)
 
     fig = px.choropleth_mapbox(
         gdf_merged,
-        geojson=geojson,
-        locations="NM_MUN",
-        featureidkey="properties.NM_MUN",
+        geojson=gdf_merged.geometry,
+        locations=gdf_merged.index,
         color=variavel,
         hover_name="NM_MUN",
         mapbox_style="carto-positron",

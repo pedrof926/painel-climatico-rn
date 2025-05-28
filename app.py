@@ -64,6 +64,7 @@ df["Classificacao_Precipitacao"] = df.apply(classificar_precip, axis=1)
 # === SHAPEFILE (GEOJSON) ===
 with open(caminho_geojson, "r", encoding="utf-8") as f:
     geojson = json.load(f)
+    print(geojson)
 
 gdf = gpd.read_file(caminho_geojson)
 gdf["NM_MUN"] = gdf["NM_MUN"].str.upper().str.strip()

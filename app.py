@@ -1,4 +1,3 @@
-from pprint import pprint
 
 import pandas as pd
 import geopandas as gpd
@@ -59,9 +58,19 @@ def classificar_precip(row):
         return "Chuva Extrema"
     return "Normal"
 
+def classificar_risco_combinado(row):
+    if pd.isna(row["GeoSES"]) or pd.isna(row["Situacao_Calor"]):
+        return None
+    if row["GeoSES"] < 0.3 and row["Situacao_Calor"] in ["Calor Severo", "Calor Extremo"]:
+        return "Risco Muito Alto"
+    elif row["GeoSES"] < 0.5 and row["Situacao_Calor"] == "Calor Extremo":
+        return "Risco Alto"
+    return "Risco Baixo/Moderado"
+
 df["Situacao_Calor"] = df.apply(classificar_ehf, axis=1)
 df["Classificacao_Umidade"] = df.apply(classificar_umidade, axis=1)
 df["Classificacao_Precipitacao"] = df.apply(classificar_precip, axis=1)
+df["Risco_Comb_EHF_GeoSES"] = df.apply(classificar_risco_combinado, axis=1)
 
 # === SHAPEFILE (GEOJSON) ===
 with open(caminho_geojson, "r", encoding="utf-8") as f:
@@ -72,7 +81,7 @@ gdf["NM_MUN"] = gdf["NM_MUN"].str.upper().str.strip()
 
 # === DASH APP ===
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-server = app.server  # Para o Render reconhecer
+server = app.server
 
 app.layout = dbc.Container([
     html.H2("Painel de Previsão Climática - Região Norte", className="text-center my-4"),
@@ -87,9 +96,10 @@ app.layout = dbc.Container([
                     {"label": "Umidade Máxima", "value": "Umid_Max"},
                     {"label": "Umidade Mínima", "value": "Umid_Min"},
                     {"label": "Precipitação", "value": "Prec_Acumulada"},
-                    {"label": "Situação de Calor Excessivo", "value": "Situacao_Calor"},
+                    {"label": "Fator Excessivo de Calor - EHF", "value": "Situacao_Calor"},
                     {"label": "Classificação da Umidade", "value": "Classificacao_Umidade"},
                     {"label": "Classificação da Precipitação", "value": "Classificacao_Precipitacao"},
+                    {"label": "Risco Combinado EHF + GeoSES", "value": "Risco_Comb_EHF_GeoSES"},
                 ],
                 value="Temp_Max",
                 clearable=False
@@ -116,7 +126,6 @@ def atualizar_mapa(variavel, data):
     dados_dia = df[df["Data"].astype(str) == data]
     dados_dia = dados_dia.drop_duplicates(subset="NM_MUN")
     gdf_merged = gdf.merge(dados_dia, on="NM_MUN", how="left")
-
     gdf_merged.set_index("CD_MUN", inplace=True)
 
     fig = px.choropleth_mapbox(
@@ -132,13 +141,15 @@ def atualizar_mapa(variavel, data):
         category_orders={
             "Situacao_Calor": ["Normal", "Calor Severo", "Calor Extremo"],
             "Classificacao_Umidade": ["Normal", "Umidade Alta Severa", "Umidade Alta Extrema"],
-            "Classificacao_Precipitacao": ["Normal", "Chuva Alta Severa", "Chuva Extrema"]
+            "Classificacao_Precipitacao": ["Normal", "Chuva Alta Severa", "Chuva Extrema"],
+            "Risco_Comb_EHF_GeoSES": ["Risco Baixo/Moderado", "Risco Alto", "Risco Muito Alto"]
         },
         color_discrete_map={
             "Normal": "green", "Calor Severo": "yellow", "Calor Extremo": "red",
             "Umidade Alta Severa": "yellow", "Umidade Alta Extrema": "red",
-            "Chuva Alta Severa": "yellow", "Chuva Extrema": "red"
-        } if "Classificacao" in variavel or "Situacao" in variavel else None,
+            "Chuva Alta Severa": "yellow", "Chuva Extrema": "red",
+            "Risco Baixo/Moderado": "green", "Risco Alto": "orange", "Risco Muito Alto": "red"
+        } if "Classificacao" in variavel or "Situacao" in variavel or "Risco" in variavel else None,
         color_continuous_scale="RdBu_r" if "Min" in variavel else "Reds"
     )
 
@@ -147,6 +158,7 @@ def atualizar_mapa(variavel, data):
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8050)
+
 
 
 
